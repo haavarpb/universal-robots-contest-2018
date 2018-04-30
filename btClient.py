@@ -5,7 +5,7 @@ ASUS = "28:E3:47:90:A4:05"
 
 print("Connecting...")
 sock=bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-sock.connect((ASUS, 1))
+sock.connect((ASUS, 3))
 print("Connection established.")
 sock.send("Hello")
 
