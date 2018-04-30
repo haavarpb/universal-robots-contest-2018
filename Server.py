@@ -2,19 +2,21 @@ import bluetooth
 import threading
 import time
 import socket
-#import message
-#import json
+import Queue
 
 class Server:
     """A multiprotocol server class supporting TCP/IP and Bluetooth."""
 
     def __init__(self):
-        print "Initiating server"
         self.initBluetooth()
         self.initTCP()
 
 
     def initBluetooth(self):
+        """ Initialize bluetooth listener.
+            - To find your device's address enter the following in bash: hciconfig
+            - Bluetooth port has to be under 25 """
+
         self._MAC = "7C:67:A2:A3:75:63"
         self._bt_socket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
         self._bt_thread = threading.Thread(target = self.listenBluetoothIncoming, name = "Bluetooth listener")
@@ -28,6 +30,8 @@ class Server:
 
 
     def listenBluetoothIncoming(self):
+        """ Handles a all incoming Bluetooth connections and starts a new thread for each """
+
         self._bt_socket.listen(5)
         while True:
             client_sock, address = self._bt_socket.accept()
@@ -37,16 +41,17 @@ class Server:
 
 
     def listenBluetoothClient(self, client_sock, address):
+        """ Handles a single Bluetooth connection """
+
         print "New client ", address
-        while True:
-            data = client_sock.recv(1024)
-            print data
-
-
-    def shutdown(self):
-        self._bt_socket.close()
+        data = client_sock.recv(1024)
+        print data
 
     def initTCP(self):
+        """ Initialize TCP listener.
+            - ip hardcoded here, port is arbitrary
+        """
+
         self._ip = "192.168.1.101"
         self._tcp_port = 8888
 
@@ -60,6 +65,7 @@ class Server:
         self._tcp_thread.start()
 
     def listenTCPIncoming(self):
+        """ Handles a all incoming TCP connections and starts a new thread for each """
         self._tcp_socket.listen(5)
         while True:
             client_sock, address = self._tcp_socket.accept()
@@ -68,10 +74,12 @@ class Server:
             client_thread.start()
 
     def listenTCPClient(self, client_sock, address):
+        """ Handles a single TCP connection """
+        print client_sock
+        print address
         print "New client ", address
-        while True:
-            data = client_sock.recv(1024)
-            print data
+        data = client_sock.recv(1024)
+        print data
 
 
 s = Server()
@@ -80,5 +88,3 @@ while True:
         time.sleep(1)
     except KeyboardInterrupt:
         break
-
-s.shutdown()
