@@ -3,6 +3,9 @@ import threading
 import time
 import socket
 import Queue
+import binascii
+import pygatt
+
 
 class Server:
     """A multiprotocol server class supporting TCP/IP and Bluetooth."""
@@ -10,6 +13,7 @@ class Server:
     def __init__(self):
         self.initBluetooth()
         self.initTCP()
+        self.initAGVs()
 
 
     def initBluetooth(self):
@@ -52,8 +56,8 @@ class Server:
             - ip hardcoded here, port is arbitrary
         """
 
-        self._ip = "192.168.1.101"
-        self._tcp_port = 8888
+        self._ip = "192.168.5.197"
+        self._tcp_port = 8887
 
         self._tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._tcp_socket.bind(("", self._tcp_port))
@@ -80,6 +84,40 @@ class Server:
         print "New client ", address
         data = client_sock.recv(1024)
         print data
+
+    def initAGVs(self):
+        self.AGV_1_LILA = "34:15:13:1C:AF:0B"
+        self.AGV_2_GREEN = "34:15:13:1C:6C:E6"
+
+        self.AGV_AT_P10 = 0
+        self.AGV_AT_P11 = 1
+        self.COMMAND_MOVE = bytearray([0x32])
+
+        self.ADDRESS_TYPE = pygatt.BLEAddressType.public
+        self.adapter = pygatt.GATTToolBackend()
+        self.adapter.start()
+        self.AGV1 = adapter.connect(AGV_1_LILA, address_type=ADDRESS_TYPE)
+        # self.AGV2 .........
+
+        self.AGV1.subscribe("0000ffe1-0000-1000-8000-00805f9b34fb",callback=handle_AGV1)
+        # self.AGV2 .........
+
+    def handle_AGV1(handle, value):
+        """handle -- integer, characteristic read handle the data was received on
+        value -- bytearray, the data returned in the notification"""
+        print("Received data: (HEX) %s, ASCII %s" % (binascii.hexlify(value), value.decode("utf-8")))
+        data_str = value.decode("utf-8")
+        newest_value = int(data_str[-1])
+        if newest_value == AGV_AT_P10:
+            print("AGV at P10. Waiting 2 secs.")
+            time.sleep(2)
+            # device.char_write('0000ffe1-0000-1000-8000-00805f9b34fb', COMMAND_MOVE)
+            # print("Sent data: (HEX) %s, ASCII %s" % (binascii.hexlify(COMMAND_MOVE), COMMAND_MOVE.decode("utf-8")))
+        elif newest_value == AGV_AT_P11:
+            print("AGV at P11. Waiting 4 secs.")
+            time.sleep(4)
+
+
 
 
 s = Server()
