@@ -1,12 +1,9 @@
-import bluetooth
-import threading
 import time
-import Queue
 import binascii
 import pygatt
 
 
-class Server:
+class BTServer:
     """A multiprotocol server class supporting TCP/IP and Bluetooth."""
 
     # Bluetooth addresses
