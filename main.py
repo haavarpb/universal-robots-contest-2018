@@ -1,4 +1,4 @@
-#from Camera import Camera
+from Camera import Camera
 from BTServer import BTServer
 from URServer import URServer
 
@@ -148,15 +148,15 @@ while True:
 		if (R1_state == R1_AT_PICTURE_POS) and (AGV1_state == BTS.AGV1_AT_P10):
 			if not pict_thread.is_alive():
 				pict_thread = threading.Thread(target=takePicture, name="pictThread")
-	        	pict_thread.daemon = True
-	        	pict_thread.start()
-        # If the problem is AGV, update the position info
-        elif AGV1_state != BTS.AGV1_AT_P10:
-        	if not agv1_bt_thread.is_alive():
-	        	agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
+				pict_thread.daemon = True
+				pict_thread.start()
+		# If the problem is AGV, update the position info
+		elif AGV1_state != BTS.AGV1_AT_P10:
+			if not agv1_bt_thread.is_alive():
+				agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
 				agv1_bt_thread.daemon = True
 				agv1_bt_thread.start();
-    # 2 - If picture has been taken
+	# 2 - If picture has been taken
 	else:
 		#  3 - If object has not been picked, pick object
 		if not R1_pick_ok:
@@ -164,9 +164,9 @@ while True:
 			if (R1_state == R1_AT_PICK_POS) and (AGV1_state == BTS.AGV1_AT_P10):
 				if not r1_thread.is_alive():
 					r1_thread = threading.Thread(target=R1PickObject, name="r1Thread")
-		        	r1_thread.daemon = True
-		        	r1_thread.start()
-	    # 4 - If object has been picked
+					r1_thread.daemon = True
+					r1_thread.start()
+		# 4 - If object has been picked
 		else:
 			# 5 - If object has not been placed, place object
 			if not R1_place_ok:
@@ -174,12 +174,12 @@ while True:
 				if (R1_state == R1_AT_PLACE_POS) and (AGV2_state == BTS.AGV2_AT_P20):
 					if not r1_thread.is_alive():
 						r1_thread = threading.Thread(target=R1PlaceObject, name="r1Thread")
-			        	r1_thread.daemon = True
-			        	r1_thread.start()
-		        # If the problem is AGV, update the position info
-		        elif AGV2_state != BTS.AGV2_AT_P20:
-		        	if not agv2_bt_thread.is_alive():
-			        	agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
+						r1_thread.daemon = True
+						r1_thread.start()
+				# If the problem is AGV, update the position info
+				elif AGV2_state != BTS.AGV2_AT_P20:
+					if not agv2_bt_thread.is_alive():
+						agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 						agv2_bt_thread.daemon = True
 						agv2_bt_thread.start();
 			# 6 - If object has been placed, reset cycle
@@ -196,25 +196,25 @@ while True:
 		if not r2_thread.is_alive():
 			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=(CAM.getOrderedCards()))
 			r2_thread.daemon = True
-		    r2_thread.start()
+			r2_thread.start()
 	# 2 - If we have picked 8, send color place commands
 	elif R2_picked_counter == 8:
 		if not r2_thread.is_alive():
 			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=(CAM.getOrderedColors()))
 			r2_thread.daemon = True
-		    r2_thread.start()
+			r2_thread.start()
 	# 3 - Else, pick another object
 	else:
 		# If everything is in position, pick object
 		if (R2_state == R2_AT_PICK_POS) and (AGV2_state == BTS.AGV2_AT_P21):
 			if not r2_thread.is_alive():
 				r2_thread = threading.Thread(target=R2PickObject, name="r2Thread")
-		    	r2_thread.daemon = True
-		    	r2_thread.start()
-	    # If the problem is AGV, update the position info
-	    elif AGV2_state != BTS.AGV2_AT_P21:
-	    	if not agv2_bt_thread.is_alive():
-	        	agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
+				r2_thread.daemon = True
+				r2_thread.start()
+		# If the problem is AGV, update the position info
+		elif AGV2_state != BTS.AGV2_AT_P21:
+			if not agv2_bt_thread.is_alive():
+				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
 
