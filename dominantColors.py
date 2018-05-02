@@ -5,10 +5,8 @@ import google.cloud.vision
 
 import json
 
-from picamera import PiCamera
 from time import sleep
 
-#camera = PiCamera()
 
 def dominant_color(camera):
 	camera.capture('image.jpg')

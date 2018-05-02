@@ -5,7 +5,7 @@ import sys
 import google.cloud.vision
 import json
 from datetime import datetime
-from picamera import PiCamera
+
 from time import sleep
 from geotext import GeoText
 
@@ -48,7 +48,6 @@ def compute_distance(camera):
 		print "Lenght city property"
 		print thereisCity
 		thereisText = thereisCity
-		raw_input("Press Enter to try again...") #Substituir o quitar
 	
 	city=places.cities[0]
 	print "city is:"
