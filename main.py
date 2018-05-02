@@ -1,4 +1,4 @@
-from Camera import Camera
+#from Camera import Camera
 from BTServer import BTServer
 from URServer import URServer
 
@@ -14,7 +14,7 @@ R2_MOVING = 5
 #########
 
 # Main objects
-CAM = Camera()
+CAM = 0#Camera()
 BTS = BTServer()
 URS = URServer()
 
@@ -85,6 +85,8 @@ def R1PickObject():
 	R1_state = R1_AT_PLACE_POS
 	R1_pick_ok = True
 	# Tell AGV1 to move
+	if agv1_bt_thread.is_alive():
+		agv1_bt_thread.join() # wait for the bt of agv1 to end
 	agv1_bt_thread = threading.Thread(target=agv1SendMoveCommand, name="agv1Thread")
 	agv1_bt_thread.daemon = True
 	agv1_bt_thread.start();
@@ -98,6 +100,8 @@ def R1PlaceObject():
 	R1_state = R1_AT_PICTURE_POS
 	R1_place_ok = True
 	# Tell AGV2 to move
+	if agv2_bt_thread.is_alive():
+		agv2_bt_thread.join() # wait for the bt of agv2 to end
 	agv2_bt_thread = threading.Thread(target=agv2SendMoveCommand, name="agv2Thread")
 	agv2_bt_thread.daemon = True
 	agv2_bt_thread.start();
@@ -111,6 +115,8 @@ def R2PickObject():
 	R2_state = R2_AT_PICK_POS
 	R2_picked_counter += 1
 	# Tell AGV2 to move
+	if agv2_bt_thread.is_alive():
+		agv2_bt_thread.join() # wait for the bt of agv2 to end
 	agv2_bt_thread = threading.Thread(target=agv2SendMoveCommand, name="agv2Thread")
 	agv2_bt_thread.daemon = True
 	agv2_bt_thread.start();
