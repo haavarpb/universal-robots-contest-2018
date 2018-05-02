@@ -239,7 +239,7 @@ void loop() {
   
   if(LT_L && LT_R && LT_M){ // detecting stop -> stop
     // only stop if there has passed enough time after a stop
-    if (millis() - tTimestop < timestopMs)
+    if (millis() - tTimestop > timestopMs)
     {
       stop();
       if (lastPos==1)
