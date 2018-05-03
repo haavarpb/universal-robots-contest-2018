@@ -196,7 +196,6 @@ while True:
 	###############
 	# 1 - If picture is not taken, take picture
 	if not R1_picture_ok:
-		print("[PROGRAM]: Trying to take picture.")
 		# If everything is in position, take picture
 		if (R1_state == R1_AT_PICTURE_POS) and (AGV1_state == BTS.AGV1_AT_P11):
 			if pict_thread == 0:
@@ -209,9 +208,9 @@ while True:
 				pict_thread.start()
 		# If the problem is AGV, update the position info
 		elif AGV1_state != BTS.AGV1_AT_P11:
-			print("[PROGRAM]: AGV1 not in position: %d" %(AGV1_state))
 			#############agv1UpdateState()
 			if not agv1ThreadOn:
+				print("[PROGRAM]: AGV1 not in position: %d" %(AGV1_state))
 				agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
 				agv1_bt_thread.daemon = True
 				agv1_bt_thread.start();
@@ -220,7 +219,6 @@ while True:
 	# 2 - If picture has been taken and object has been picked
 	#     If object has not been placed, place object
 	elif not R1_place_ok:
-		print("[PROGRAM]: Trying to place object.")
 		# If everything is in position, place object
 		if (R1_state == R1_AT_PLACE_POS) and (AGV2_state == BTS.AGV2_AT_P20):
 			if r1_thread == 0:
@@ -233,9 +231,9 @@ while True:
 				r1_thread.start()
 		# If the problem is AGV, update the position info
 		elif AGV2_state != BTS.AGV2_AT_P20:
-			print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
 			################agv2UpdateState()
 			if not agv2ThreadOn:
+				print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
