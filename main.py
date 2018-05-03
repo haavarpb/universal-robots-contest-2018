@@ -29,6 +29,7 @@ PIC_COLOR = 1
 
 R1_picture_ok = False
 R1_place_ok = False
+R2_ready_to_pick = False
 
 R1_picture_counter = 0
 R2_picked_counter = 0
@@ -72,7 +73,7 @@ def agv1UpdateState():
 
 def agv1SendMoveCommand():
 	""" Send a BT message to move AGV1 """
-	global agv1ThreadOn, agv2ThreadOn
+	global agv1ThreadOn, agv2ThreadOn, AGV1_state
 	print("[BT 1]: Trying to send move message.")
 	t = 0
 	while agv2ThreadOn or agv1ThreadOn:
@@ -84,6 +85,7 @@ def agv1SendMoveCommand():
 	print("[BT 2]: Sending move message.")
 	agv1ThreadOn = True
 	BTS.sendMoveMessage(1, False)
+	AGV1_state = BTS.AGV1_MOVING
 	agv1ThreadOn = False
 
 
@@ -106,7 +108,7 @@ def agv2UpdateState():
 
 def agv2SendMoveCommand():
 	""" Send a BT message to move AGV2 """
-	global agv1ThreadOn, agv2ThreadOn
+	global agv1ThreadOn, agv2ThreadOn, AGV2_state
 	print("[BT 2]: Trying to send move message.")
 	t = 0
 	while agv1ThreadOn or agv2ThreadOn:
@@ -118,6 +120,7 @@ def agv2SendMoveCommand():
 	print("[BT 2]: Sending move message.")
 	agv2ThreadOn = True
 	BTS.sendMoveMessage(2, False)
+	AGV2_state = BTS.AGV2_MOVING
 	agv2ThreadOn = False
 
 
@@ -209,7 +212,7 @@ while True:
 		# If the problem is AGV, update the position info
 		elif AGV1_state != BTS.AGV1_AT_P11:
 			#############agv1UpdateState()
-			if not agv1ThreadOn:
+			if not agv1ThreadOn and not agv2ThreadOn:
 				print("[PROGRAM]: AGV1 not in position: %d" %(AGV1_state))
 				agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
 				agv1_bt_thread.daemon = True
@@ -232,16 +235,17 @@ while True:
 		# If the problem is AGV, update the position info
 		elif AGV2_state != BTS.AGV2_AT_P20:
 			################agv2UpdateState()
-			if not agv2ThreadOn:
+			if not agv1ThreadOn and not agv2ThreadOn:
 				print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
 	# 3 - If object has been placed, reset cycle
 	else:
-		print("[PROGRAM]: Resetting R1 cycle.")
+		print("[PROGRAM]: Resetting R1 cycle. Enabling R2 pick.")
 		R1_picture_ok = False
 		R1_place_ok = False
+		R2_ready_to_pick = True
 
 	###############
 	# R2 workflow #
@@ -250,37 +254,38 @@ while True:
 	if R2_picked_counter == 4:
 		print("[PROGRAM]: Trying to order R2 cards.")
 		if not r2_thread.is_alive():
-			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=(CAM.getOrderedCards()))
+			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedCards()]))
 			r2_thread.daemon = True
 			r2_thread.start()
 	# 2 - If we have picked 8, send color place commands
 	elif R2_picked_counter == 8:
 		print("[PROGRAM]: Trying to order R2 colors.")
 		if not r2_thread.is_alive():
-			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=(CAM.getOrderedColors()))
+			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedColors()]))
 			r2_thread.daemon = True
 			r2_thread.start()
 	# 3 - Else, pick another object if R1 has placed it
-	elif R1_place_ok:
-		print("[PROGRAM]: Trying to pick R2 object.")
+	elif R2_ready_to_pick:
 		# If everything is in position, pick object
 		if (R2_state == R2_AT_PICK_POS) and (AGV2_state == BTS.AGV2_AT_P21):
 			if r2_thread == 0:
 				r2_thread = threading.Thread(target=R2PickObject, name="r2Thread")
 				r2_thread.daemon = True
 				r2_thread.start()
+				R2_ready_to_pick = False
 			elif not r2_thread.is_alive():
 				r2_thread = threading.Thread(target=R2PickObject, name="r2Thread")
 				r2_thread.daemon = True
 				r2_thread.start()
+				R2_ready_to_pick = False
 					
 		# If the problem is AGV, update the position info
 		elif AGV2_state != BTS.AGV2_AT_P21:
 			print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
 			################3agv2UpdateState()
-			if not agv2ThreadOn:
+			if not agv1ThreadOn and not agv2ThreadOn:
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
 
-
+	time.sleep(0.2)
