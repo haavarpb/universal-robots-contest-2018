@@ -59,7 +59,7 @@ def agv1UpdateState():
 	global AGV1_state, agv1ThreadOn, agv2ThreadOn
 	print("[BT 1]: Trying to update AGV1 state.")
 	t = 0
-	while agv2ThreadOn || agv1ThreadOn:
+	while agv2ThreadOn or agv1ThreadOn:
 		if t == 0:
 			print("[BT 1]: Waiting for BT to stop.")
 			t = 1
@@ -75,7 +75,7 @@ def agv1SendMoveCommand():
 	global agv1ThreadOn, agv2ThreadOn
 	print("[BT 1]: Trying to send move message.")
 	t = 0
-	while agv2ThreadOn || agv1ThreadOn:
+	while agv2ThreadOn or agv1ThreadOn:
 		if t == 0:
 			print("[BT 1]: Waiting for BT to stop.")
 			t = 1
@@ -92,7 +92,7 @@ def agv2UpdateState():
 	global AGV2_state, agv1ThreadOn, agv2ThreadOn
 	print("[BT 2]: Trying to update AGV2 state.")
 	t = 0
-	while agv1ThreadOn || agv2ThreadOn:
+	while agv1ThreadOn or agv2ThreadOn:
 		if t == 0:
 			print("[BT 2]: Waiting for BT to stop.")
 			t = 1
@@ -109,7 +109,7 @@ def agv2SendMoveCommand():
 	global agv1ThreadOn, agv2ThreadOn
 	print("[BT 2]: Trying to send move message.")
 	t = 0
-	while agv1ThreadOn || agv2ThreadOn:
+	while agv1ThreadOn or agv2ThreadOn:
 		if t == 0:
 			print("[BT 2]: Waiting for BT to stop.")
 			t = 1
