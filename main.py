@@ -17,7 +17,7 @@ R2_MOVING = 4
 CAM = Camera()
 BTS = BTServer()
 UR1 = URSocket(23)
-#UR2 = URSocket(22)
+UR2 = URSocket(22)
 
 # Main variables
 AGV1_state = BTS.AGV1_MOVING
@@ -162,10 +162,16 @@ def R1PlaceObject():
 
 def R2PickObject():
 	""" Send pick order to R2 and wait for response, then tell AGV2 to move """
-	global R2_state, R2_picked_counter
-	# URS.sendMessage("UR2","(0)")
+	global R2_state, R2_picked_counter, UR2
+	# Receive message: UR2 ready
+	msg = UR2.receive()
+	print("[PROGRAM]: message received from R2: " + msg)
+	# Send message to pick object
+	UR2.sendMessage("(0)\n")
 	R2_state = R2_MOVING
-	# URS.getMessage("UR2")
+	# Receive message: AGV2 cleared
+	msg = UR2.receive()
+	print("[PROGRAM]: message received from R2: " + msg)
 	# interpret message...
 	R2_state = R2_AT_PICK_POS
 	R2_picked_counter += 1
@@ -179,9 +185,29 @@ def R2PlaceObjects(orderedObjects):
 	ord2 = orderedObjects.index(1) + 1;
 	ord3 = orderedObjects.index(2) + 1;
 	ord4 = orderedObjects.index(3) + 1;
-	# URS.sendMessage("UR2","(%d,%d,%d,%d)" % (ord4, ord1, ord2, ord3))
 	R2_state = R2_MOVING
-	# URS.getMessage("UR2")
+	# Send message with first command
+	UR2.send("(%d)\n" % (ord4))
+	# Receive message: first output done
+	UR2.receive()
+	# Receive message: buffer1 cleared
+	UR2.receive()
+	# Send message with second command
+	UR2.send("(%d)\n" % (ord1))
+	# Receive message: second output done
+	UR2.receive()
+	# Receive message: buffer2 cleared
+	UR2.receive()
+	# Send message with third command
+	UR2.send("(%d)\n" % (ord2))
+	# Receive message: third output done
+	UR2.receive()
+	# Receive message: buffer3 cleared
+	UR2.receive()
+	# Send message with fourth command
+	UR2.send("(%d)\n" % (ord3))
+	# Receive message: fourth output done
+	UR2.receive()
 	# interpret message...
 	R2_state = R2_AT_PICK_POS
 
