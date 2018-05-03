@@ -17,7 +17,7 @@ R2_MOVING = 4
 CAM = Camera()
 BTS = BTServer()
 UR1 = URSocket(23)
-UR2 = URSocket(22)
+UR2 = URSocket(24)
 
 # Main variables
 AGV1_state = BTS.AGV1_MOVING
@@ -167,7 +167,7 @@ def R2PickObject():
 	msg = UR2.receive()
 	print("[PROGRAM]: message received from R2: " + msg)
 	# Send message to pick object
-	UR2.sendMessage("(0)\n")
+	UR2.send("(0)\n")
 	R2_state = R2_MOVING
 	# Receive message: AGV2 cleared
 	msg = UR2.receive()

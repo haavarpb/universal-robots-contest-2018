@@ -47,8 +47,16 @@ class BTServer:
 		# 2 - Create the connection
 		self.adapter = pygatt.GATTToolBackend()
 		self.adapter.start()
-		self.device = self.adapter.connect(AGVaddress, address_type=self.ADDRESS_TYPE)
-		print("[BT %d]: Connected." %(AGV_id))
+		connected = False
+		while not connected:
+			try:
+				print("[BT %d]: Connecting." % (AGV_id))
+				self.device = self.adapter.connect(AGVaddress, address_type=self.ADDRESS_TYPE)
+				print("[BT %d]: Connected." %(AGV_id))
+				connected = True
+			except:
+				print("[BT %d]: Unable to connect, trying again." % (AGV_id))
+				time.sleep(0.2)
 
 		# 3 - Subscribe to the device to listen for info
 		self.msgreceived = False
