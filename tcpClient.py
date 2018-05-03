@@ -6,7 +6,15 @@ class TCPClient:
         self.host_ip = "192.168.1.101"
         self.host_port = 8888
         self.s.connect((self.host_ip, self.host_port))
-        s.sendall("Hello world through TCP")
-        s.close()
+        print "Connected to", s.gethostbyname()
+
+    def run(self):
+        while True:
+            print "Waiting for incoming message"
+            data = self.s.recv(1024)
+            print "Got message: ", data
+            self.s.send(data)
+            print "Echoed message"
 
 client = TCPClient()
+client.run()
