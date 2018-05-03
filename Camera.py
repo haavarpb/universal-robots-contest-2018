@@ -2,6 +2,7 @@
 import io
 import os
 import sys
+import pexpect
 # For analyzing
 from computeDistance import *
 from dominantColors import *
@@ -11,6 +12,7 @@ from picamera import PiCamera
 class Camera:
 
 	def __init__(self):
+		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=~miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
 		self.camera = PiCamera()
 		self.cards = []
 		self.colors = []

@@ -1,8 +1,9 @@
 from Camera import Camera
 from BTServer import BTServer
-from URServer import URServer
+from socketTest import URSocket
 
 import threading
+import time
 
 #########
 R1_AT_PICTURE_POS = 0
@@ -16,7 +17,8 @@ R2_MOVING = 5
 # Main objects
 CAM = Camera()
 BTS = BTServer()
-URS = URServer()
+UR1 = URSocket(23)
+#UR2 = URSocket(22)
 
 # Main variables
 AGV1_state = BTS.AGV1_MOVING
@@ -33,77 +35,132 @@ R1_place_ok = False
 R1_picture_counter = 0
 R2_picked_counter = 0
 
+agv1ThreadOn = False
+agv2ThreadOn = False
+
 # Functions to be threaded
 def takePicture():
 	""" Take a picture, update the R1_picture_ok and R1_picture_counter variables and tell R1 to move to Pick Pos """
+	global R1_picture_counter, R1_picture_ok, UR1
+	# Receive message: UR1 ready
+	msg = UR1.receive()
+	print(msg)
+	# Slect which picture to take
 	if R1_picture_counter < 4:
 		picType = PIC_DISTANCE
 	else:
 		picType = PIC_COLOR
-	CAM.takePicture(picType)
+	#CAM.takePicture(picType)
 	R1_picture_counter += 1
 	R1_picture_ok = True
+	R1PickObject()
 
 def agv1UpdateState():
 	""" Do a BT request to update the state of AGV1 """
-	if agv2_bt_thread.is_alive():
-		agv2_bt_thread.join() # wait for the bt of agv2 to end
+	global AGV1_state, agv1ThreadOn, agv2ThreadOn
+	print("[BT 1]: Trying to update AGV1 state.")
+	t = 0
+	while agv2ThreadOn:
+		if t == 0:
+			print("[BT 1]: Waiting for BT 2 to stop.")
+			t = 1
+		else:
+			time.sleep(0.1)
+	print("[BT 1]: Updating AGV1 state")
+	agv1ThreadOn = True
 	AGV1_state = BTS.getState(1)
+	agv1ThreadOn = False
 
 def agv1SendMoveCommand():
 	""" Send a BT message to move AGV1 """
-	if agv2_bt_thread.is_alive():
-		agv2_bt_thread.join() # wait for the bt of agv2 to end
-	BTS.sendMoveMessage(1)
+	global agv1ThreadOn, agv2ThreadOn
+	print("[BT 1]: Trying to send move message.")
+	t = 0
+	while agv2ThreadOn:
+		if t == 0:
+			print("[BT 1]: Waiting for BT 2 to stop.")
+			t = 1
+		else:
+			time.sleep(0.1)
+	print("[BT 2]: Sending move message.")
+	agv1ThreadOn = True
+	BTS.sendMoveMessage(1, False)
+	agv1ThreadOn = False
 
 def agv2UpdateState():
 	""" Do a BT request to update the state of AGV2 """
-	if agv1_bt_thread.is_alive():
-		agv1_bt_thread.join() # wait for the bt of agv1 to end
+	global AGV2_state, agv1ThreadOn, agv2ThreadOn
+	print("[BT 2]: Trying to update AGV2 state.")
+	t = 0
+	while agv1ThreadOn:
+		if t == 0:
+			print("[BT 2]: Waiting for BT 1 to stop.")
+			t = 1
+		else:
+			time.sleep(0.1)
+	print("[BT 2]: Updating AGV2 state")
+	agv2ThreadOn = True
 	AGV2_state = BTS.getState(2)
+	agv2ThreadOn = False
 
 def agv2SendMoveCommand():
 	""" Send a BT message to move AGV2 """
-	if agv1_bt_thread.is_alive():
-		agv1_bt_thread.join() # wait for the bt of agv1 to end
-	BTS.sendMoveMessage(2)
+	global agv1ThreadOn, agv2ThreadOn
+	print("[BT 2]: Trying to send move message.")
+	t = 0
+	while agv1ThreadOn:
+		if t == 0:
+			print("[BT 2]: Waiting for BT 1 to stop.")
+			t = 1
+		else:
+			time.sleep(0.1)
+	print("[BT 2]: Sending move message.")
+	agv2ThreadOn = True
+	BTS.sendMoveMessage(2, False)
+	agv2ThreadOn = False
 
-def R1MoveToPick():
-	""" Send move order to R1 and wait for response """
-	# URS.sendMessage("UR1","(0)")
-	R1_state = R1_MOVING
-	# URS.getMessage("UR1")
-	# interpret message...
-	R1_state = R1_AT_PICK_POS
 
 def R1PickObject():
 	""" Send pick order to R1 and wait for response, then tell AGV1 to move """
-	# URS.sendMessage("UR1","(0)")
+	global R1_state, R1_pick_ok, UR1
+	# Send message to pick
+	UR1.send("(0)\n")
+	print("[R1]: Picking and going to place position.")
 	R1_state = R1_MOVING
-	# URS.getMessage("UR1")
+	# Receive message AGV1 cleared
+	msg = UR1.receive()
+	print(msg)
 	# interpret message...
 	R1_state = R1_AT_PLACE_POS
 	R1_pick_ok = True
 	# Tell AGV1 to move
-	agv1_bt_thread = threading.Thread(target=agv1SendMoveCommand, name="agv1Thread")
-	agv1_bt_thread.daemon = True
-	agv1_bt_thread.start();
+	print("[PROGRAM]: Moving AGV1 to P10.")
+	agv1SendMoveCommand()
+	# agv1_bt_thread = threading.Thread(target=agv1SendMoveCommand, name="agv1Thread")
+	# agv1_bt_thread.daemon = True
+	# agv1_bt_thread.start();
 
 def R1PlaceObject():
 	""" Send place order to R1 and wait for response, then tell AGV2 to move """
-	# URS.sendMessage("UR1","(0)")
+	global R1_state, R1_place_ok, UR1
+	# Send message to place objet
+	UR1.send("(0)\n")
 	R1_state = R1_MOVING
-	# URS.getMessage("UR1")
+	# Receive message "AGV2 loaded"
+	msg = UR1.receive()
+	print(msg)
 	# interpret message...
 	R1_state = R1_AT_PICTURE_POS
 	R1_place_ok = True
 	# Tell AGV2 to move
-	agv2_bt_thread = threading.Thread(target=agv2SendMoveCommand, name="agv2Thread")
-	agv2_bt_thread.daemon = True
-	agv2_bt_thread.start();
+	agv2SendMoveCommand()
+	# agv2_bt_thread = threading.Thread(target=agv2SendMoveCommand, name="agv2Thread")
+	# agv2_bt_thread.daemon = True
+	# agv2_bt_thread.start();
 
 def R2PickObject():
 	""" Send pick order to R2 and wait for response, then tell AGV2 to move """
+	global R2_state, R2_picked_counter
 	# URS.sendMessage("UR2","(0)")
 	R2_state = R2_MOVING
 	# URS.getMessage("UR2")
@@ -111,14 +168,14 @@ def R2PickObject():
 	R2_state = R2_AT_PICK_POS
 	R2_picked_counter += 1
 	# Tell AGV2 to move
-	if agv2_bt_thread.is_alive():
-		agv2_bt_thread.join() # wait for the bt of agv2 to end
-	agv2_bt_thread = threading.Thread(target=agv2SendMoveCommand, name="agv2Thread")
-	agv2_bt_thread.daemon = True
-	agv2_bt_thread.start();
+	agv2SendMoveCommand()
+	# agv2_bt_thread = threading.Thread(target=agv2SendMoveCommand, name="agv2Thread")
+	# agv2_bt_thread.daemon = True
+	# agv2_bt_thread.start();
 
 def R2PlaceObjects(orderedObjects):
 	""" Send place order to R2 and wait for response, then tell AGV2 to move """
+	global R2_state
 	ord1 = orderedObjects.index(0) + 1;
 	ord2 = orderedObjects.index(1) + 1;
 	ord3 = orderedObjects.index(2) + 1;
@@ -133,12 +190,14 @@ def R2PlaceObjects(orderedObjects):
 # Threads
 pict_thread = 0 # thread will be created when needed
 r1_thread = 0 # thread will be created when needed
+r2_thread = 0 # thread will be created when needed
 agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
 agv1_bt_thread.daemon = True
 agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 agv1_bt_thread.daemon = True
-agv1_bt_thread.start();
-agv2_bt_thread.start();
+# agv1_bt_thread.start();
+# time.sleep(0.2)
+# agv2_bt_thread.start();
 
 while True:
 	###############
@@ -146,46 +205,66 @@ while True:
 	###############
 	# 1 - If picture is not taken, take picture
 	if not R1_picture_ok:
+		print("[PROGRAM]: Trying to take picture.")
 		# If everything is in position, take picture
-		if (R1_state == R1_AT_PICTURE_POS) and (AGV1_state == BTS.AGV1_AT_P10):
-			if not pict_thread.is_alive():
+		if (R1_state == R1_AT_PICTURE_POS) and (AGV1_state == BTS.AGV1_AT_P11):
+			print("[PROGRAM]: Taking picture.")
+			if pict_thread == 0:
+				pict_thread = threading.Thread(target=takePicture, name="pictThread")
+				pict_thread.daemon = True
+				pict_thread.start()
+			elif not pict_thread.is_alive():
 				pict_thread = threading.Thread(target=takePicture, name="pictThread")
 				pict_thread.daemon = True
 				pict_thread.start()
 		# If the problem is AGV, update the position info
-		elif AGV1_state != BTS.AGV1_AT_P10:
-			if not agv1_bt_thread.is_alive():
-				agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
-				agv1_bt_thread.daemon = True
-				agv1_bt_thread.start();
+		elif AGV1_state != BTS.AGV1_AT_P11:
+			print("[PROGRAM]: AGV1 not in position")
+			print(AGV1_state)
+			agv1UpdateState()
+			# if not agv1_bt_thread.is_alive():
+				# agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
+				# agv1_bt_thread.daemon = True
+				# agv1_bt_thread.start();
+		else:
+			print("[PROGRAM]: R1 not in position.")
 	# 2 - If picture has been taken
 	#     If object has not been picked, pick object
-	elif not R1_pick_ok:
-		# If everything is in position, pick object
-		if (R1_state == R1_AT_PICK_POS) and (AGV1_state == BTS.AGV1_AT_P10):
-			if not r1_thread.is_alive():
-				r1_thread = threading.Thread(target=R1PickObject, name="r1Thread")
-				r1_thread.daemon = True
-				r1_thread.start()
+	# elif not R1_pick_ok:
+		#If everything is in position, pick object
+		# if (R1_state == R1_AT_PICK_POS) and (AGV1_state == BTS.AGV1_AT_P11):
+			# if r1_thread == 0:
+				# r1_thread = threading.Thread(target=R1PickObject, name="r1Thread")
+				# r1_thread.daemon = True
+				# r1_thread.start()
+			# elif not r1_thread.is_alive():
+				# r1_thread = threading.Thread(target=R1PickObject, name="r1Thread")
+				# r1_thread.daemon = True
+				# r1_thread.start()
 	# 3 - If object has been picked
 	#     If object has not been placed, place object
 	elif not R1_place_ok:
 		# If everything is in position, place object
 		if (R1_state == R1_AT_PLACE_POS) and (AGV2_state == BTS.AGV2_AT_P20):
-			if not r1_thread.is_alive():
+			if r1_thread == 0:
+				r1_thread = threading.Thread(target=R1PlaceObject, name="r1Thread")
+				r1_thread.daemon = True
+				r1_thread.start()
+			elif not r1_thread.is_alive():
 				r1_thread = threading.Thread(target=R1PlaceObject, name="r1Thread")
 				r1_thread.daemon = True
 				r1_thread.start()
 		# If the problem is AGV, update the position info
 		elif AGV2_state != BTS.AGV2_AT_P20:
-			if not agv2_bt_thread.is_alive():
-				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
-				agv2_bt_thread.daemon = True
-				agv2_bt_thread.start();
+			agv2UpdateState()
+			# if not agv2_bt_thread.is_alive():
+				# agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
+				# agv2_bt_thread.daemon = True
+				# agv2_bt_thread.start();
 	# 4 - If object has been placed, reset cycle
 	else:
 		R1_picture_ok = False
-		R1_pick_ok = False
+		# R1_pick_ok = False
 		R1_place_ok = False
 
 	###############
@@ -207,15 +286,21 @@ while True:
 	else:
 		# If everything is in position, pick object
 		if (R2_state == R2_AT_PICK_POS) and (AGV2_state == BTS.AGV2_AT_P21):
-			if not r2_thread.is_alive():
+			if r2_thread == 0:
 				r2_thread = threading.Thread(target=R2PickObject, name="r2Thread")
 				r2_thread.daemon = True
 				r2_thread.start()
+			elif not r2_thread.is_alive():
+				r2_thread = threading.Thread(target=R2PickObject, name="r2Thread")
+				r2_thread.daemon = True
+				r2_thread.start()
+					
 		# If the problem is AGV, update the position info
 		elif AGV2_state != BTS.AGV2_AT_P21:
-			if not agv2_bt_thread.is_alive():
-				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
-				agv2_bt_thread.daemon = True
-				agv2_bt_thread.start();
+			agv2UpdateState()
+			# if not agv2_bt_thread.is_alive():
+				# agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
+				# agv2_bt_thread.daemon = True
+				# agv2_bt_thread.start();
 
 
