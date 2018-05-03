@@ -1,4 +1,4 @@
-#from Camera import Camera
+from Camera import Camera
 from BTServer import BTServer
 from URServer import URServer
 
@@ -14,7 +14,7 @@ R2_MOVING = 5
 #########
 
 # Main objects
-CAM = 0#Camera()
+CAM = Camera()
 BTS = BTServer()
 URS = URServer()
 
