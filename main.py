@@ -30,6 +30,7 @@ PIC_COLOR = 1
 R1_picture_ok = False
 R1_place_ok = False
 R2_ready_to_pick = False
+R2_placed_ordered = False
 
 R1_picture_counter = 0
 R2_picked_counter = 0
@@ -278,18 +279,22 @@ while True:
 	###############
 	# 1 - If we have picked 4, send distance place commands
 	if R2_picked_counter == 4:
-		print("[PROGRAM]: Trying to order R2 cards.")
-		if not r2_thread.is_alive():
+		if not r2_thread.is_alive() and not R2_placed_ordered:
+			print("[PROGRAM]: Ordering cards.")
+			R2_placed_ordered = True
 			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedCards()]))
 			r2_thread.daemon = True
 			r2_thread.start()
 	# 2 - If we have picked 8, send color place commands
-	elif R2_picked_counter == 8:
-		print("[PROGRAM]: Trying to order R2 colors.")
+	elif R2_picked_counter == 8 and not R2_placed_ordered:
 		if not r2_thread.is_alive():
+			print("[PROGRAM]: Ordering colors.")
+			R2_placed_ordered
 			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedColors()]))
 			r2_thread.daemon = True
 			r2_thread.start()
+	elif R2_picked_counter == 5:
+		R2_placed_ordered = False
 	# 3 - Else, pick another object if R1 has placed it
 	elif R2_ready_to_pick:
 		# If everything is in position, pick object
@@ -304,7 +309,7 @@ while True:
 				r2_thread.daemon = True
 				r2_thread.start()
 				R2_ready_to_pick = False
-					
+
 		# If the problem is AGV, update the position info
 		elif AGV2_state != BTS.AGV2_AT_P21:
 			print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
