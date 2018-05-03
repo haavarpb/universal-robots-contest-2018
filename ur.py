@@ -3,7 +3,7 @@ import socket
 import Queue
 import time
 
-class URServer:
+class ur:
     """ Server program enabling connection to the two UR robots """
 
     def __init__(self, port):
@@ -11,7 +11,10 @@ class URServer:
         self.qo = Queue.Queue()
         self.port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.bind(("", self.port))
+        self.socket.bind(("127.0.0.1", self.port))
+        self.socket.listen(1)
+        client_socket, addr = self.socket.accept()
+        self.client_socket = client_socket
         self.thread_listen = threading.Thread(target = self._listen)
         self.thread_listen.start()
         self.thread_send = threading.Thread(target = self._send)
@@ -19,27 +22,25 @@ class URServer:
 
     def _listen(self):
         """ Mailman function """
-        self.s.listen(1)
-        client_socket, addr = socket.accept()
         while True:
-            data = client_socket.recv(1024)
-            print "Got message: ", data
-            q_in.put(data)
+            data = self.client_socket.recv(1024)
+            self.qi.put(data)
 
     def _send(self):
         """ Send messages as long as it is available """
         while True:
             if not self.qo.empty():
                 payload = self.qo.get_nowait()
-                self.socket.send(payload)
+                self.client_socket.send(payload)
 
-	def getMessage(self, target):
-		""" Get message from URX X = [1, 2] if any. None if none """
+    def getMessage(self):
+        """ Get message from URX X = [1, 2] if any. None if none """
         if not self.qi.empty():
-            return self.qi.get_nowait()
+            message = self.qi.get_nowait()
+            return message
         else:
-            return None
+            return False
 
-    def sendMessage(self, target, message):
+    def sendMessage(self, message):
         """ Send message to target UR """
-		self.qo.put(message)
+        self.qo.put(message)
