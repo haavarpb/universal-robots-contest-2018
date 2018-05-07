@@ -22,12 +22,12 @@ class Camera:
 			#DISTANCES
 			print('Init Distance')
 			distance = compute_distance(self.camera)
-			self.cards.append([len(self.cards), distance])
+			self.cards.append([len(self.cards)+1, distance])
 		else:
 			#DOMINANT COLOR
 			print('Init Dominant Color')
 			piccolors = dominant_color(self.camera)
-			self.colors.append([len(self.colors), piccolors])
+			self.colors.append([len(self.colors)+1, piccolors])
 
 	def getOrderedCards(self):
 		self.cards.sort(key=lambda x: x[1])
@@ -46,8 +46,19 @@ class Camera:
 				#print ('Movement ',f(str(Card[i][0])))
 
 	def getOrderedColors(self):
-			self.colors.sort(key=lambda x: x[1])
-			objectOrder = [x[0] for x in self.colors]
+			objectOrder = []
+			# 1 - Picture with most R
+			self.colors.sort(key=lambda x: x[1][0])
+			objectOrder.append(self.colors.pop()[0])
+			# 2 - Picture with most G (of the remainig ones)
+			self.colors.sort(key=lambda x: x[1][1])
+			objectOrder.append(self.colors.pop()[0])
+			# 3 - Picture with most G (of the remainig ones)
+			self.colors.sort(key=lambda x: x[1][2])
+			objectOrder.append(self.colors.pop()[0])
+			# 4 - Remaining picture
+			objectOrder.append(self.colors.pop()[0])
+
 			return objectOrder
 
 			#for i in range (0,N):

@@ -28,28 +28,13 @@ def dominant_color(camera):
 	bsum = 0.0;
 	once = 1;
 
-	print('Properties:')
-
-
 	for color in props.dominant_colors.colors:
-		print('fraction: {}'.format(color.pixel_fraction))
-		print('\tr: {}'.format(color.color.red))
-		print(json.dumps('\tg: {}'.format(color.color.green)))
-		print('\tb: {}'.format(color.color.blue))
-		print('\ta: {}'.format(color.color.alpha))
-		"""
-		if once:
-			rsum = color.color.red
-			gsum = color.color.green
-			bsum = color.color.blue
-		once = 0
-		"""
 		rsum += color.pixel_fraction*color.color.red
 		gsum += color.pixel_fraction*color.color.green
 		bsum += color.pixel_fraction*color.color.blue
 	print "rsum: %f gsum: %f bsum: %f" % (rsum,gsum,bsum)
 	
-	return rsum
+	return [rsum, gsum, bsum]
 	
 	
 

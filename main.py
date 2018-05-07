@@ -13,6 +13,9 @@ R2_AT_PICK_POS = 3
 R2_MOVING = 4
 #########
 
+CAM = Camera()
+BTS = BTServer()
+
 # Main variables
 AGV1_state = BTS.AGV1_MOVING
 AGV2_state = BTS.AGV2_MOVING
@@ -31,11 +34,6 @@ R2_picked_counter = 0
 
 agv1ThreadOn = False
 agv2ThreadOn = False
-
-CAM = 0
-BTS = 0
-UR1 = 0
-UR2 = 0
 
 # Functions to be threaded
 def takePicture():
@@ -181,10 +179,10 @@ def R2PickObject():
 def R2PlaceObjects(orderedObjects):
 	""" Send place order to R2 and wait for response, then tell AGV2 to move """
 	global R2_state
-	ord1 = orderedObjects.index(0) + 1;
-	ord2 = orderedObjects.index(1) + 1;
-	ord3 = orderedObjects.index(2) + 1;
-	ord4 = orderedObjects.index(3) + 1;
+	ord1 = orderedObjects.index(1) + 1;
+	ord2 = orderedObjects.index(2) + 1;
+	ord3 = orderedObjects.index(3) + 1;
+	ord4 = orderedObjects.index(4) + 1;
 	R2_state = R2_MOVING
 	# Send message with first command
 	UR2.send("(%d)\n" % (ord4))
@@ -216,8 +214,6 @@ agv2_bt_thread = 0 # thread will be created when needed
 ###########################
 # Initialise main objects #
 ###########################
-CAM = Camera()
-BTS = BTServer()
 UR1 = URSocket(23)
 UR2 = URSocket(24)
 
