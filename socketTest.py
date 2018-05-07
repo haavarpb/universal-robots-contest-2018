@@ -20,7 +20,7 @@ class URSocket:
 		self.connection, self.client_address = self.sock.accept()
 		
 	def receive(self):
-		data = self.connection.recv(16)
+		data = self.connection.recv(32)
 		print sys.stderr, 'received "%s"' % data
 		return data
 		

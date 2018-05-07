@@ -13,12 +13,6 @@ R2_AT_PICK_POS = 3
 R2_MOVING = 4
 #########
 
-# Main objects
-CAM = Camera()
-BTS = BTServer()
-UR1 = URSocket(23)
-UR2 = URSocket(24)
-
 # Main variables
 AGV1_state = BTS.AGV1_MOVING
 AGV2_state = BTS.AGV2_MOVING
@@ -37,6 +31,11 @@ R2_picked_counter = 0
 
 agv1ThreadOn = False
 agv2ThreadOn = False
+
+CAM = 0
+BTS = 0
+UR1 = 0
+UR2 = 0
 
 # Functions to be threaded
 def takePicture():
@@ -58,7 +57,7 @@ def takePicture():
 
 def agv1UpdateState():
 	""" Do a BT request to update the state of AGV1 """
-	global AGV1_state, agv1ThreadOn, agv2ThreadOn
+	global agv1ThreadOn, agv2ThreadOn, BTS
 	print("[BT 1]: Trying to update AGV1 state.")
 	t = 0
 	while agv2ThreadOn or agv1ThreadOn:
@@ -69,12 +68,12 @@ def agv1UpdateState():
 			time.sleep(0.1)
 	print("[BT 1]: Updating AGV1 state")
 	agv1ThreadOn = True
-	AGV1_state = BTS.getState(1)
+	BTS.updateState(1)
 	agv1ThreadOn = False
 
 def agv1SendMoveCommand():
 	""" Send a BT message to move AGV1 """
-	global agv1ThreadOn, agv2ThreadOn, AGV1_state
+	global agv1ThreadOn, agv2ThreadOn, BTS
 	print("[BT 1]: Trying to send move message.")
 	t = 0
 	while agv2ThreadOn or agv1ThreadOn:
@@ -86,13 +85,13 @@ def agv1SendMoveCommand():
 	print("[BT 2]: Sending move message.")
 	agv1ThreadOn = True
 	BTS.sendMoveMessage(1, False)
-	AGV1_state = BTS.AGV1_MOVING
+	BTS.stateAGV1 = BTS.AGV1_MOVING
 	agv1ThreadOn = False
 
 
 def agv2UpdateState():
 	""" Do a BT request to update the state of AGV2 """
-	global AGV2_state, agv1ThreadOn, agv2ThreadOn
+	global agv1ThreadOn, agv2ThreadOn, BTS
 	print("[BT 2]: Trying to update AGV2 state.")
 	t = 0
 	while agv1ThreadOn or agv2ThreadOn:
@@ -103,13 +102,13 @@ def agv2UpdateState():
 			time.sleep(0.1)
 	print("[BT 2]: Updating AGV2 state")
 	agv2ThreadOn = True
-	AGV2_state = BTS.getState(2)
+	BTS.updateState(2)
 	agv2ThreadOn = False
 
 
 def agv2SendMoveCommand():
 	""" Send a BT message to move AGV2 """
-	global agv1ThreadOn, agv2ThreadOn, AGV2_state
+	global agv1ThreadOn, agv2ThreadOn, BTS
 	print("[BT 2]: Trying to send move message.")
 	t = 0
 	while agv1ThreadOn or agv2ThreadOn:
@@ -121,7 +120,7 @@ def agv2SendMoveCommand():
 	print("[BT 2]: Sending move message.")
 	agv2ThreadOn = True
 	BTS.sendMoveMessage(2, False)
-	AGV2_state = BTS.AGV2_MOVING
+	BTS.stateAGV2 = BTS.AGV2_MOVING
 	agv2ThreadOn = False
 
 
@@ -189,20 +188,14 @@ def R2PlaceObjects(orderedObjects):
 	R2_state = R2_MOVING
 	# Send message with first command
 	UR2.send("(%d)\n" % (ord4))
-	# Receive message: first output done
-	UR2.receive()
 	# Receive message: buffer1 cleared
 	UR2.receive()
 	# Send message with second command
 	UR2.send("(%d)\n" % (ord1))
-	# Receive message: second output done
-	UR2.receive()
 	# Receive message: buffer2 cleared
 	UR2.receive()
 	# Send message with third command
 	UR2.send("(%d)\n" % (ord2))
-	# Receive message: third output done
-	UR2.receive()
 	# Receive message: buffer3 cleared
 	UR2.receive()
 	# Send message with fourth command
@@ -220,6 +213,23 @@ r2_thread = 0 # thread will be created when needed
 agv1_bt_thread = 0 # thread will be created when needed
 agv2_bt_thread = 0 # thread will be created when needed
 
+###########################
+# Initialise main objects #
+###########################
+CAM = Camera()
+BTS = BTServer()
+UR1 = URSocket(23)
+UR2 = URSocket(24)
+
+# Econnect to AGV1
+agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
+agv1_bt_thread.daemon = True
+agv1_bt_thread.start();
+
+# Wait for start!!!!
+print("Ready to start! Press some key...")
+input()
+
 while True:
 	###############
 	# R1 workflow #
@@ -227,7 +237,7 @@ while True:
 	# 1 - If picture is not taken, take picture
 	if not R1_picture_ok:
 		# If everything is in position, take picture
-		if (R1_state == R1_AT_PICTURE_POS) and (AGV1_state == BTS.AGV1_AT_P11):
+		if (R1_state == R1_AT_PICTURE_POS) and (BTS.stateAGV1 == BTS.AGV1_AT_P11):
 			if pict_thread == 0:
 				pict_thread = threading.Thread(target=takePicture, name="pictThread")
 				pict_thread.daemon = True
@@ -237,10 +247,10 @@ while True:
 				pict_thread.daemon = True
 				pict_thread.start()
 		# If the problem is AGV, update the position info
-		elif AGV1_state != BTS.AGV1_AT_P11:
+		elif BTS.stateAGV1 != BTS.AGV1_AT_P11:
 			#############agv1UpdateState()
 			if not agv1ThreadOn and not agv2ThreadOn:
-				print("[PROGRAM]: AGV1 not in position: %d" %(AGV1_state))
+				print("[PROGRAM]: AGV1 not in position: %d" %(BTS.stateAGV1))
 				agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
 				agv1_bt_thread.daemon = True
 				agv1_bt_thread.start();
@@ -250,7 +260,7 @@ while True:
 	#     If object has not been placed, place object
 	elif not R1_place_ok:
 		# If everything is in position, place object
-		if (R1_state == R1_AT_PLACE_POS) and (AGV2_state == BTS.AGV2_AT_P20):
+		if (R1_state == R1_AT_PLACE_POS) and (BTS.stateAGV2 == BTS.AGV2_AT_P20):
 			if r1_thread == 0:
 				r1_thread = threading.Thread(target=R1PlaceObject, name="r1Thread")
 				r1_thread.daemon = True
@@ -260,10 +270,10 @@ while True:
 				r1_thread.daemon = True
 				r1_thread.start()
 		# If the problem is AGV, update the position info
-		elif AGV2_state != BTS.AGV2_AT_P20:
+		elif BTS.stateAGV2 != BTS.AGV2_AT_P20:
 			################agv2UpdateState()
 			if not agv1ThreadOn and not agv2ThreadOn:
-				print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
+				print("[PROGRAM]: AGV2 not in position: %d" %(BTS.stateAGV2))
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
@@ -298,7 +308,7 @@ while True:
 	# 3 - Else, pick another object if R1 has placed it
 	elif R2_ready_to_pick:
 		# If everything is in position, pick object
-		if (R2_state == R2_AT_PICK_POS) and (AGV2_state == BTS.AGV2_AT_P21):
+		if (R2_state == R2_AT_PICK_POS) and (BTS.stateAGV2 == BTS.AGV2_AT_P21):
 			if r2_thread == 0:
 				r2_thread = threading.Thread(target=R2PickObject, name="r2Thread")
 				r2_thread.daemon = True
@@ -311,8 +321,8 @@ while True:
 				R2_ready_to_pick = False
 
 		# If the problem is AGV, update the position info
-		elif AGV2_state != BTS.AGV2_AT_P21:
-			print("[PROGRAM]: AGV2 not in position: %d" %(AGV2_state))
+		elif BTS.stateAGV2 != BTS.AGV2_AT_P21:
+			print("[PROGRAM]: AGV2 not in position: %d" %(BTS.stateAGV2))
 			################3agv2UpdateState()
 			if not agv1ThreadOn and not agv2ThreadOn:
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
