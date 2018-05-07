@@ -134,10 +134,11 @@ def R1PickObject():
 	print("[PROGRAM]: message received from R1: " + msg)
 	# interpret message...
 	R1_state = R1_AT_PLACE_POS
-	R1_pick_ok = True
 	# Tell AGV1 to move
 	print("[PROGRAM]: Sending Move Command to AGV1.")
 	agv1SendMoveCommand()
+	# Action ended
+	R1_pick_ok = True
 
 
 def R1PlaceObject():
@@ -152,10 +153,11 @@ def R1PlaceObject():
 	print("[PROGRAM]: message received from R1: " + msg)
 	# interpret message...
 	R1_state = R1_AT_PICTURE_POS
-	R1_place_ok = True
 	# Tell AGV2 to move
 	print("[PROGRAM]: Sending Move Command to AGV2.")
 	agv2SendMoveCommand()
+	# Action ended
+	R1_place_ok = True
 
 
 def R2PickObject():
@@ -299,10 +301,11 @@ while True:
 			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedColors()]))
 			r2_thread.daemon = True
 			r2_thread.start()
-	elif R2_picked_counter == 5:
-		R2_placed_ordered = False
 	# 3 - Else, pick another object if R1 has placed it
 	elif R2_ready_to_pick:
+		# Enable placing again after 4 picks
+		if R2_picked_counter == 5:
+			R2_placed_ordered = False
 		# If everything is in position, pick object
 		if (R2_state == R2_AT_PICK_POS) and (BTS.stateAGV2 == BTS.AGV2_AT_P21):
 			if r2_thread == 0:
