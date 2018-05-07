@@ -64,6 +64,7 @@ class BTServer:
 					self.device = self.adapter.connect(AGVaddress, address_type=self.ADDRESS_TYPE)
 					print("[BT %d]: Connected." %(AGV_id))
 					self.BTconnected = AGV_id
+					self.BTsubscribed = 0
 				except:
 					print("[BT %d]: Unable to connect, trying again." % (AGV_id))
 					time.sleep(0.2)
@@ -147,6 +148,7 @@ class BTServer:
 					self.device = self.adapter.connect(AGVaddress, address_type=self.ADDRESS_TYPE)
 					print("[BT %d]: Connected." %(AGV_id))
 					self.BTconnected = AGV_id
+					self.BTsubscribed = 0
 				except:
 					print("[BT %d]: Unable to connect, trying again." % (AGV_id))
 					time.sleep(0.2)

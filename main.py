@@ -224,7 +224,7 @@ agv1_bt_thread.start();
 
 # Wait for start!!!!
 print("Ready to start! Press some key...")
-input()
+a = input()
 
 while True:
 	###############
