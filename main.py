@@ -235,8 +235,8 @@ agv2_bt_thread = 0 # thread will be created when needed
 ####################
 # SARTING SEQUENCE #
 ####################
-UR1 = startConnection()
-UR2 = startConnection()
+UR1.startConnection()
+UR2.startConnection()
 
 # Connect to AGV1
 agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
