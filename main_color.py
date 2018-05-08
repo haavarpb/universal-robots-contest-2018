@@ -110,7 +110,6 @@ def agv1SendMoveCommand(subscribeToState=False):
 	print("[BT 2]: Sending move message.")
 	agv1ThreadOn = True
 	BTS.sendMoveMessage(1, subscribeToState)
-	BTS.stateAGV1 = BTS.AGV1_MOVING
 	agv1ThreadOn = False
 
 
@@ -145,7 +144,6 @@ def agv2SendMoveCommand(subscribeToState=False):
 	print("[BT 2]: Sending move message.")
 	agv2ThreadOn = True
 	BTS.sendMoveMessage(2, subscribeToState)
-	BTS.stateAGV2 = BTS.AGV2_MOVING
 	agv2ThreadOn = False
 
 
@@ -228,7 +226,6 @@ agv2_bt_thread = 0 # thread will be created when needed
 UR1.startConnection()
 UR2.startConnection()
 
-# Connect to AGV1
 # Connect to AGV1
 BTS.updateState(1)
 
