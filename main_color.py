@@ -48,6 +48,8 @@ R2_picked_counter = 0
 agv1ThreadOn = False
 agv2ThreadOn = False
 
+colorOrder = 0
+
 #############
 # FUNCTIONS #
 #############
@@ -55,20 +57,28 @@ agv2ThreadOn = False
 # Functions to be threaded
 def takePicture():
 	""" Take a picture, update the R1_picture_ok and R1_picture_counter variables and tell R1 to move to Pick Pos """
-	global R1_picture_counter, R1_picture_ok, UR1
+	global R1_picture_counter, R1_picture_ok, UR1, colorOrder
 	# Receive message: UR1 ready
 	msg = UR1.receive()
 	print("[PROGRAM]: message received from R1: " + msg)
 	# Slect which picture to take
-	if R1_picture_counter > 3:
-		picType = PIC_DISTANCE
-	else:
-		picType = PIC_COLOR
+	picType = PIC_COLOR
 	print("[PROGRAM]: Taking picture.")
 	CAM.takePicture(picType)
 	R1_picture_counter += 1
 	R1_picture_ok = True
-	R1PickObject()
+	# Final actions
+	if R1_picture_counter < 4:
+		R1PickObject()
+	elif R1_picture_counter == 4:
+		colorOrder = CAM.getOrderedColors()
+		ord1 = colorOrder.index(1) + 1
+		ord2 = colorOrder.index(2) + 1
+		ord3 = colorOrder.index(3) + 1
+		# Send message with first 3 commands
+		UR2.send("(%d)\n" % (ord3, ord1, ord2))
+		# Tell R1 to pick the object from AGV1
+		R1PickObject(False)
 
 def agv1UpdateState():
 	""" Do a BT request to update the state of AGV1 """
@@ -139,7 +149,7 @@ def agv2SendMoveCommand(subscribeToState=False):
 	agv2ThreadOn = False
 
 
-def R1PickObject():
+def R1PickObject(moveAGV1=True):
 	""" Send pick order to R1 and wait for response, then tell AGV1 to move """
 	global R1_state, R1_pick_ok, UR1
 	# Send message to pick
@@ -152,8 +162,9 @@ def R1PickObject():
 	# interpret message...
 	R1_state = R1_AT_PLACE_POS
 	# Tell AGV1 to move
-	print("[PROGRAM]: Sending Move Command to AGV1.")
-	agv1SendMoveCommand()
+	if moveAGV1:
+		print("[PROGRAM]: Sending Move Command to AGV1.")
+		agv1SendMoveCommand()
 	# Action ended
 	R1_pick_ok = True
 
@@ -179,12 +190,16 @@ def R1PlaceObject():
 
 def R2PickObject():
 	""" Send pick order to R2 and wait for response, then tell AGV2 to move """
-	global R2_state, R2_picked_counter, UR2
+	global R2_state, R2_picked_counter, UR2, colorOrder
 	# Receive message: UR2 ready
 	msg = UR2.receive()
 	print("[PROGRAM]: message received from R2: " + msg)
 	# Send message to pick object
-	UR2.send("(0)\n")
+	if R1_picture_counter < 4:
+		UR2.send("(0)\n")
+	elif R1_picture_counter == 4:
+		ord4 = colorOrder.index(4) + 1
+		UR2.send("(%d)\n" %(ord4))
 	R2_state = R2_MOVING
 	# Receive message: AGV2 cleared
 	msg = UR2.receive()
@@ -193,36 +208,9 @@ def R2PickObject():
 	R2_state = R2_AT_PICK_POS
 	R2_picked_counter += 1
 	# Tell AGV2 to move if we have not ended
-	if R2_picked_counter % 4 != 0:
+	if R2_picked_counter == 4:
 		print("[PROGRAM]: Sending Move Command to AGV2.")
 		agv2SendMoveCommand()
-
-def R2PlaceObjects(orderedObjects):
-	""" Send place order to R2 and wait for response, then tell AGV2 to move """
-	global R2_state
-	ord1 = orderedObjects.index(1) + 1;
-	ord2 = orderedObjects.index(2) + 1;
-	ord3 = orderedObjects.index(3) + 1;
-	ord4 = orderedObjects.index(4) + 1;
-	R2_state = R2_MOVING
-	# Send message with first command
-	UR2.send("(%d)\n" % (ord4))
-	# Receive message: buffer1 cleared
-	UR2.receive()
-	# Send message with second command
-	UR2.send("(%d)\n" % (ord1))
-	# Receive message: buffer2 cleared
-	UR2.receive()
-	# Send message with third command
-	UR2.send("(%d)\n" % (ord2))
-	# Receive message: buffer3 cleared
-	UR2.receive()
-	# Send message with fourth command
-	UR2.send("(%d)\n" % (ord3))
-	# Receive message: fourth output done
-	UR2.receive()
-	# interpret message...
-	R2_state = R2_AT_PICK_POS
 
 
 ###########
@@ -311,27 +299,8 @@ while True:
 	###############
 	# R2 workflow #
 	###############
-	# 1 - If we have picked 4, send distance place commands
-	if R2_picked_counter == 8:
-		if not r2_thread.is_alive() and not R2_placed_ordered:
-			print("[PROGRAM]: Ordering cards.")
-			R2_placed_ordered = True
-			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedCards()]))
-			r2_thread.daemon = True
-			r2_thread.start()
-	# 2 - If we have picked 8, send color place commands
-	elif R2_picked_counter == 4:
-		if not r2_thread.is_alive() and not R2_placed_ordered:
-			print("[PROGRAM]: Ordering colors.")
-			R2_placed_ordered = True
-			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedColors()]))
-			r2_thread.daemon = True
-			r2_thread.start()
-	# 3 - Else, pick another object if R1 has placed it
-	elif R2_ready_to_pick:
-		# Enable placing again after 4 picks
-		if R2_picked_counter == 5:
-			R2_placed_ordered = False
+	# 3 - Pick an object if R1 has placed it
+	if R2_ready_to_pick:
 		# If everything is in position, pick object
 		if (R2_state == R2_AT_PICK_POS) and (BTS.stateAGV2 == BTS.AGV2_AT_P21):
 			if r2_thread == 0:

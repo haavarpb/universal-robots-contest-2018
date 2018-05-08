@@ -16,13 +16,8 @@ class Camera:
 		self.cards = []
 		self.colors = []
 		self.debug = debug
-		self.image_file_name = 'img.jpg'
-		self.image = 0
 
 	def takePicture(self, picType):
-		if self.debug: print("[CAMERA]: taking picture.")
-		with io.open(self.image_file_name, 'wb') as self.image:
-			self.camera.capture(self.image)
 		if picType == 0:
 			# DISTANCES
 			if self.debug: print("[CAMERA]: taking picture: Distances")

@@ -5,7 +5,7 @@ import google.cloud.vision
 
 
 
-def dominant_color(camera, picture, client, debug=True):
+def dominant_color(camera, client, debug=True):
 	"""Take a picture and find the dominant colors"""
 
 	# Take picture
