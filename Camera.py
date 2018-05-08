@@ -9,6 +9,7 @@ from picamera import PiCamera
 class Camera:
 
 	def __init__(self, debug=True):
+
 		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=~miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
 		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
 		self.camera = PiCamera()
@@ -16,8 +17,10 @@ class Camera:
 		self.cards = []
 		self.colors = []
 		self.debug = debug
+		self.picturesTaken = 0
 
 	def takePicture(self, picType):
+
 		if picType == 0:
 			# DISTANCES
 			if self.debug: print("[CAMERA]: taking picture: Distances")
@@ -29,12 +32,18 @@ class Camera:
 			piccolors = dominant_color(self.camera, self.client)
 			self.colors.append([len(self.colors)+1, piccolors])
 
+		self.picturesTaken += 1
+
+
 	def getOrderedCards(self):
+
 		self.cards.sort(key=lambda x: x[1])
 		objectOrder = [x[0] for x in self.cards]
 		return objectOrder
 
+
 	def getOrderedColors(self):
+
 		objectOrder = []
 		# 1 - Picture with most R
 		self.colors.sort(key=lambda x: x[1][0])
@@ -42,7 +51,7 @@ class Camera:
 		# 2 - Picture with most G (of the remainig ones)
 		self.colors.sort(key=lambda x: x[1][1])
 		objectOrder.append(self.colors.pop()[0])
-		# 3 - Picture with most G (of the remainig ones)
+		# 3 - Picture with most B (of the remainig ones)
 		self.colors.sort(key=lambda x: x[1][2])
 		objectOrder.append(self.colors.pop()[0])
 		# 4 - Remaining picture
