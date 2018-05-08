@@ -5,13 +5,12 @@ import google.cloud.vision
 
 
 
-def dominant_color(camera):
+def dominant_color(camera, picture, client, debug=True):
 	"""Take a picture and find the dominant colors"""
 
 	# Take picture
 	camera.capture('image.jpg')
 	# Upload the picture to google cloud vision and obtain the response
-	client = google.cloud.vision.ImageAnnotatorClient()
 	image_file_name = 'image.jpg'
 	with io.open(image_file_name, 'rb') as image_file:
 		content = image_file.read()

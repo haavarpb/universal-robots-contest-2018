@@ -7,7 +7,7 @@ from datetime import datetime
 from geotext import GeoText
 
 
-def compute_distance(camera, debug=True):
+def compute_distance(camera, client, debug=True):
 	"""Take a picture, find text in it, find a city in the text and compute the distance to Barcelona"""
 	thereisCity = 0
 	thereisText = 0
@@ -18,7 +18,6 @@ def compute_distance(camera, debug=True):
 			# Take picture
 			camera.capture('image.jpg')
 			# Upload the picture to google cloud vision and obtain the response
-			client = google.cloud.vision.ImageAnnotatorClient()
 			image_file_name = 'image.jpg'
 			with io.open(image_file_name, 'rb') as image_file:
 				content = image_file.read()
