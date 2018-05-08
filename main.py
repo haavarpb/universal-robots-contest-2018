@@ -5,26 +5,39 @@ from socketTest import URSocket
 import threading
 import time
 
-#########
+#############
+# CONSTANTS #
+#############
 R1_AT_PICTURE_POS = 0
 R1_AT_PLACE_POS = 1
 R1_MOVING = 2
 R2_AT_PICK_POS = 3
 R2_MOVING = 4
-#########
+
+PIC_DISTANCE = 0
+PIC_COLOR = 1
+
+###########
+# OBJECTS #
+###########
 
 CAM = Camera()
 BTS = BTServer()
+UR1 = URSocket(23)
+UR2 = URSocket(24)
 
-# Main variables
+
+#############
+# VARIABLES #
+#############
+
 AGV1_state = BTS.AGV1_MOVING
 AGV2_state = BTS.AGV2_MOVING
 R1_state = R1_AT_PICTURE_POS
 R2_state = R2_AT_PICK_POS
-PIC_DISTANCE = 0
-PIC_COLOR = 1
 
 R1_picture_ok = False
+R1_pick_ok = False
 R1_place_ok = False
 R2_ready_to_pick = False
 R2_placed_ordered = False
@@ -34,6 +47,10 @@ R2_picked_counter = 0
 
 agv1ThreadOn = False
 agv2ThreadOn = False
+
+#############
+# FUNCTIONS #
+#############
 
 # Functions to be threaded
 def takePicture():
@@ -206,27 +223,35 @@ def R2PlaceObjects(orderedObjects):
 	R2_state = R2_AT_PICK_POS
 
 
-# Threads
+###########
+# THREADS #
+###########
 pict_thread = 0 # thread will be created when needed
 r1_thread = 0 # thread will be created when needed
 r2_thread = 0 # thread will be created when needed
 agv1_bt_thread = 0 # thread will be created when needed
 agv2_bt_thread = 0 # thread will be created when needed
 
-###########################
-# Initialise main objects #
-###########################
-UR1 = URSocket(23)
-UR2 = URSocket(24)
+####################
+# SARTING SEQUENCE #
+####################
+UR1 = startConnection()
+UR2 = startConnection()
 
-# Econnect to AGV1
+# Connect to AGV1
 agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
 agv1_bt_thread.daemon = True
 agv1_bt_thread.start();
 
 # Wait for start!!!!
-print("Ready to start! Press some key...")
-a = input()
+print("[PROGRAM]: Ready to start! Press any key...")
+a = raw_input()
+
+agv1SendMoveCommand()
+
+#############
+# MAIN LOOP #
+#############
 
 while True:
 	###############
@@ -246,7 +271,6 @@ while True:
 				pict_thread.start()
 		# If the problem is AGV, update the position info
 		elif BTS.stateAGV1 != BTS.AGV1_AT_P11:
-			#############agv1UpdateState()
 			if not agv1ThreadOn and not agv2ThreadOn:
 				print("[PROGRAM]: AGV1 not in position: %d" %(BTS.stateAGV1))
 				agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
@@ -256,7 +280,7 @@ while True:
 			print("[PROGRAM]: R1 not in position.")
 	# 2 - If picture has been taken and object has been picked
 	#     If object has not been placed, place object
-	elif not R1_place_ok:
+	elif R1_pick_ok and not R1_place_ok:
 		# If everything is in position, place object
 		if (R1_state == R1_AT_PLACE_POS) and (BTS.stateAGV2 == BTS.AGV2_AT_P20):
 			if r1_thread == 0:
@@ -269,7 +293,6 @@ while True:
 				r1_thread.start()
 		# If the problem is AGV, update the position info
 		elif BTS.stateAGV2 != BTS.AGV2_AT_P20:
-			################agv2UpdateState()
 			if not agv1ThreadOn and not agv2ThreadOn:
 				print("[PROGRAM]: AGV2 not in position: %d" %(BTS.stateAGV2))
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
@@ -279,6 +302,7 @@ while True:
 	else:
 		print("[PROGRAM]: Resetting R1 cycle. Enabling R2 pick.")
 		R1_picture_ok = False
+		R1_pick_ok = False
 		R1_place_ok = False
 		R2_ready_to_pick = True
 
@@ -319,13 +343,15 @@ while True:
 				r2_thread.start()
 				R2_ready_to_pick = False
 
-		# If the problem is AGV, update the position info
+		# If the problem is the AGV, update the position info
 		elif BTS.stateAGV2 != BTS.AGV2_AT_P21:
 			print("[PROGRAM]: AGV2 not in position: %d" %(BTS.stateAGV2))
-			################3agv2UpdateState()
 			if not agv1ThreadOn and not agv2ThreadOn:
 				agv2_bt_thread = threading.Thread(target=agv2UpdateState, name="agv2Thread")
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
 
-	time.sleep(0.2)
+	###########################
+	# SLEEP BEFORE NEXT LOOP? #
+	###########################
+	time.sleep(0.1)

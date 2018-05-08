@@ -1,27 +1,24 @@
+# For files
 import io
-import os
-
+# For analyzing
 import google.cloud.vision
 
-import json
-
-from time import sleep
 
 
 def dominant_color(camera):
+	"""Take a picture and find the dominant colors"""
+
+	# Take picture
 	camera.capture('image.jpg')
-
+	# Upload the picture to google cloud vision and obtain the response
 	client = google.cloud.vision.ImageAnnotatorClient()
-
 	image_file_name = 'image.jpg'
 	with io.open(image_file_name, 'rb') as image_file:
 		content = image_file.read()
-
 	image = google.cloud.vision.types.Image(content=content)
-
 	response = client.image_properties(image=image)
+	# Obtain the dominant colors
 	props = response.image_properties_annotation
-
 
 	rsum = 0.0;
 	gsum = 0.0;
@@ -35,21 +32,4 @@ def dominant_color(camera):
 	print "rsum: %f gsum: %f bsum: %f" % (rsum,gsum,bsum)
 	
 	return [rsum, gsum, bsum]
-	
-	
-
-"""
-if (rsum >= 50) and (gsum < 50) and (bsum < 50):
-	print('Dominant: red')
-elif (rsum < 50) and (gsum >= 50) and (bsum < 50):
-	print('Dominant: green')
-elif (rsum < 50) and (gsum < 50) and (bsum >= 50):
-	print('Dominant: blue')
-elif (rsum > 50) and (gsum < rsum*2.0/3.0) and (gsum>50) and (bsum < 50):
-	print('Dominant:orange')
-elif (rsum > 50) and (gsum > 50) and (bsum < 50):
-	print('Dominant: yellow')
-else:
-	print('Dominant white')
-"""
 

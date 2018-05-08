@@ -4,7 +4,7 @@ import pygatt
 
 
 class BTServer:
-	"""A multiprotocol server class supporting TCP/IP and Bluetooth."""
+	"""A server class supporting Bluetooth."""
 
 	# Bluetooth addresses
 	AGV_1_LILA = "34:15:13:1C:AF:0B"
@@ -23,7 +23,7 @@ class BTServer:
 	# Bluetooth address type
 	ADDRESS_TYPE = pygatt.BLEAddressType.public
 
-	def __init__(self):
+	def __init__(self, debug=True):
 		# State variables
 		self.stateAGV1 = -1
 		self.stateAGV2 = -1
@@ -38,6 +38,9 @@ class BTServer:
 		self.BTconnected = 0
 		self.BTsubscribed = 0
 
+		# Debug variable
+		self.debug = debug
+
 	def updateState(self, AGV_id):
 		""" Creates a connection with the selected AGV and reads the latest state it published """
 
@@ -47,26 +50,26 @@ class BTServer:
 		elif AGV_id == 2:
 			AGVaddress = self.AGV_2_GREEN
 		else:
-			error('Unknown AGV_id: must be 1 or 2')
+			error("Unknown AGV_id: must be 1 or 2")
 
 		# 2 - If we are not connected: connect
 		if self.BTconnected != AGV_id:
 			# 2.1 - If there is another connection, close it
 			if self.BTconnected != 0:
 				self.adapter.stop()
-				print("[BT %d]: Disconnected." %(self.BTconnected))
+				if self.debug: print("[BT %d]: Disconnected." %(self.BTconnected))
 			# 2.2 - Create the connection
 			self.adapter = pygatt.GATTToolBackend()
 			self.adapter.start()
 			while self.BTconnected != AGV_id:
 				try:
-					print("[BT %d]: Connecting." % (AGV_id))
+					if self.debug: print("[BT %d]: Connecting." % (AGV_id))
 					self.device = self.adapter.connect(AGVaddress, address_type=self.ADDRESS_TYPE)
-					print("[BT %d]: Connected." %(AGV_id))
+					if self.debug: print("[BT %d]: Connected." %(AGV_id))
 					self.BTconnected = AGV_id
 					self.BTsubscribed = 0
 				except:
-					print("[BT %d]: Unable to connect, trying again." % (AGV_id))
+					if self.debug: print("[BT %d]: Unable to connect, trying again." % (AGV_id))
 					time.sleep(0.2)
 
 		# 3 - If we are not subscribed: subscribe
@@ -74,16 +77,16 @@ class BTServer:
 			# 3.1 - Subscribe to the device to listen for info
 			while self.BTsubscribed != AGV_id:
 				try:
-					print("[BT %d]: Subscribing for info." %(AGV_id))
+					if self.debug: print("[BT %d]: Subscribing for info." %(AGV_id))
 					if AGV_id == 1:
 						self.device.subscribe("0000ffe1-0000-1000-8000-00805f9b34fb", callback=self.handle_msg_1)
 					else:
 						self.device.subscribe("0000ffe1-0000-1000-8000-00805f9b34fb", callback=self.handle_msg_2)
-					print("[BT %d]: Subscribed to." %(AGV_id))
+					if self.debug: print("[BT %d]: Subscribed to." %(AGV_id))
 					self.BTsubscribed = AGV_id
 					self.msgreceived = False
 				except:
-					print("[BT %d]: Unable to subscribe, trying again." %(AGV_id))
+					if self.debug: print("[BT %d]: Unable to subscribe, trying again." %(AGV_id))
 					time.sleep(0.2)
 
 		# 4 - Wait until we receive at least one message
@@ -94,8 +97,9 @@ class BTServer:
 
 	def handle_msg_1(self, handle, value):
 		""" Handle and incoming message for AGV1: get the last message """
-
-		print("[BT 1]: Received data: %s" % (value.decode("utf-8")))
+		##
+		##if self.debug: print("[BT 1]: Received data: %s" % (value.decode("utf-8")))
+		##
 
 		# 1 - Get the data as ASCII and take the last value
 		data_str = value.decode("utf-8")
@@ -108,8 +112,9 @@ class BTServer:
 
 	def handle_msg_2(self, handle, value):
 		""" Handle and incoming message for AGV1: get the last message """
-
-		print("[BT 2]: Received data: %s" % (value.decode("utf-8")))
+		##
+		##if self.debug: print("[BT 2]: Received data: %s" % (value.decode("utf-8")))
+		##
 
 		# 1 - Get the data as ASCII and take the last value
 		data_str = value.decode("utf-8")
@@ -128,61 +133,62 @@ class BTServer:
 			AGVaddress = self.AGV_1_LILA
 			msg = self.COMMAND_MOVE_AGV1
 			ok = self.AGV1_MOVING
-		else:
+		elif AGV_id == 2:
 			AGVaddress = self.AGV_2_GREEN
 			msg = self.COMMAND_MOVE_AGV2
 			ok = self.AGV2_MOVING
+		else:
+			error("Unknown AGV_id: must be 1 or 2")
 
 		# 2 - If we are not connected: connect
 		if self.BTconnected != AGV_id:
 			# 2.1 - If there is another connection, close it
 			if self.BTconnected != 0:
 				self.adapter.stop()
-				print("[BT %d]: Disconnected." %(self.BTconnected))
+				if self.debug: print("[BT %d]: Disconnected." %(self.BTconnected))
 			# 2.2 - Create the connection
 			self.adapter = pygatt.GATTToolBackend()
 			self.adapter.start()
 			while self.BTconnected != AGV_id:
 				try:
-					print("[BT %d]: Connecting." % (AGV_id))
+					if self.debug: print("[BT %d]: Connecting." % (AGV_id))
 					self.device = self.adapter.connect(AGVaddress, address_type=self.ADDRESS_TYPE)
-					print("[BT %d]: Connected." %(AGV_id))
+					if self.debug: print("[BT %d]: Connected." %(AGV_id))
 					self.BTconnected = AGV_id
 					self.BTsubscribed = 0
 				except:
-					print("[BT %d]: Unable to connect, trying again." % (AGV_id))
+					if self.debug: print("[BT %d]: Unable to connect, trying again." % (AGV_id))
 					time.sleep(0.2)
 
 		# 3 - Send the message
 		sent = False
 		while not sent:
 			try:
-				print("[BT %d]: Sending data." %(AGV_id))
+				if self.debug: print("[BT %d]: Sending data." %(AGV_id))
 				self.device.char_write("0000ffe1-0000-1000-8000-00805f9b34fb", msg)
-				print("[BT %d] Sent data:  %s" % (AGV_id, msg.decode("utf-8")))
+				if self.debug: print("[BT %d] Sent data:  %s" % (AGV_id, msg.decode("utf-8")))
 				sent = True
 			except:
-				print("[BT %d]: Unable to send, trying again." %(AGV_id))
+				if self.debug: print("[BT %d]: Unable to send, trying again." %(AGV_id))
 
+		# 4 - If we want to subscribe
 		if subscribeToState:
-			# 4 - If we are not subscribed: subscribe
+			# 4.1 - If we are not subscribed: subscribe
 			if self.BTsubscribed != AGV_id:
-				# 4.1 - Subscribe to the device to listen for info
+				# 4.1.1 - Subscribe to the device to listen for info
 				while self.BTsubscribed != AGV_id:
 					try:
-						print("[BT %d]: Subscribing for info." %(AGV_id))
+						if self.debug: print("[BT %d]: Subscribing for info." %(AGV_id))
 						if AGV_id == 1:
 							self.device.subscribe("0000ffe1-0000-1000-8000-00805f9b34fb", callback=self.handle_msg_1)
 						else:
 							self.device.subscribe("0000ffe1-0000-1000-8000-00805f9b34fb", callback=self.handle_msg_2)
-						print("[BT %d]: Subscribed to." %(AGV_id))
+						if self.debug: print("[BT %d]: Subscribed to." %(AGV_id))
 						self.BTsubscribed = AGV_id
 						self.msgreceived = False
 					except:
-						print("[BT %d]: Unable to subscribe, trying again." %(AGV_id))
+						if self.debug: print("[BT %d]: Unable to subscribe, trying again." %(AGV_id))
 						time.sleep(0.2)
-
-		return True
 
 
 

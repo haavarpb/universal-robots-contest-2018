@@ -1,73 +1,50 @@
-import googlemaps
+# For files
 import io
-import os
-import sys
+# For analyzing
+import googlemaps
 import google.cloud.vision
-import json
 from datetime import datetime
-
-from time import sleep
 from geotext import GeoText
 
-#camera = PiCamera()
-def compute_distance(camera):
-	print "Distances"
-	#my_file = open('image.jpg', 'wb')
+
+def compute_distance(camera, debug=True):
+	"""Take a picture, find text in it, find a city in the text and compute the distance to Barcelona"""
 	thereisCity = 0
 	thereisText = 0
+	# While no city has been detected
 	while thereisCity == 0:
+		# Take pictures until we detect text
 		while thereisText == 0:
+			# Take picture
 			camera.capture('image.jpg')
-
+			# Upload the picture to google cloud vision and obtain the response
 			client = google.cloud.vision.ImageAnnotatorClient()
-
-			#image_file_name = '../Images/DSC_2045.JPG'
 			image_file_name = 'image.jpg'
 			with io.open(image_file_name, 'rb') as image_file:
 				content = image_file.read()
-
 			image = google.cloud.vision.types.Image(content=content)
-
 			response = client.text_detection(image=image)
+			# Get the text detected
 			texts = response.text_annotations
 			thereisText = len(texts)
-			print thereisText
+			if debug and not thereisText == 0: print("[CAMERA]: no text detected")
 
-		#my_file.flush()
-		#my_file.close()
-
-		print('Texts:')
-
-		#for text in texts:
-
+		# We have detected text
 		text_total = '"{}"'.format(texts[0].description.encode('utf-8'))
-
-		print text_total
+		if debug: print("[CAMERA]: text detected: %s" %(text_total))
+		# Find a city name in the text
 		places = GeoText(text_total)
 		thereisCity = len(places.cities)
-		print "Lenght city property"
-		print thereisCity
+		if debug and not thereisCity == 0: print("[CAMERA]: no city detected")
 		thereisText = thereisCity
 	
+	# We have found a city
 	city=places.cities[0]
-	print "city is:"
-	print city
-	#print(place)
-
+	if debug: print("[CAMERA]: city detected: %s" %(city))
+	# Find the distance to Barcelona
 	gmaps = googlemaps.Client(key='AIzaSyC0xbKR7oOTPYHlCwo7Os4kKH31naeZDAo')
-
-
 	now = datetime.now()
-	directions_result = gmaps.directions(city,
-	                                     "Barcelona",
-	                                     mode="driving",
-	                                     avoid="ferries",
-	                                     departure_time=now
-	                                    )
-
-	#print(directions_result[0]['legs'][0]['distance']['text'])
-
+	directions_result = gmaps.directions(city, "Barcelona", mode="driving", avoid="ferries", departure_time=now)
 	distance = directions_result[0]['legs'][0]['distance']['value']
-	#distance = distance[0]
-	#distance = float(distance)
+
 	return distance
