@@ -76,6 +76,7 @@ def takePicture():
 		ord2 = colorOrder.index(2) + 1
 		ord3 = colorOrder.index(3) + 1
 		# Send message with first 3 commands
+		print("[PROGRAM]: Sending ordered colors.")
 		UR2.send("(%d,%d,%d)\n" % (ord3, ord1, ord2))
 		# Tell R1 to pick the object from AGV1
 		R1PickObject(False)
