@@ -26,9 +26,9 @@ def dominant_color(camera):
 	once = 1;
 
 	for color in props.dominant_colors.colors:
-		rsum += color.pixel_fraction*color.color.red
-		gsum += color.pixel_fraction*color.color.green
-		bsum += color.pixel_fraction*color.color.blue
+		rsum += color.score*color.color.red
+		gsum += color.score*color.color.green
+		bsum += color.score*color.color.blue
 	print "rsum: %f gsum: %f bsum: %f" % (rsum,gsum,bsum)
 	
 	return [rsum, gsum, bsum]

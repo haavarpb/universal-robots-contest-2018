@@ -60,7 +60,7 @@ def takePicture():
 	msg = UR1.receive()
 	print("[PROGRAM]: message received from R1: " + msg)
 	# Slect which picture to take
-	if R1_picture_counter < 4:
+	if R1_picture_counter > 3:
 		picType = PIC_DISTANCE
 	else:
 		picType = PIC_COLOR
@@ -86,7 +86,7 @@ def agv1UpdateState():
 	BTS.updateState(1)
 	agv1ThreadOn = False
 
-def agv1SendMoveCommand():
+def agv1SendMoveCommand(subscribeToState=False):
 	""" Send a BT message to move AGV1 """
 	global agv1ThreadOn, agv2ThreadOn, BTS
 	print("[BT 1]: Trying to send move message.")
@@ -99,7 +99,7 @@ def agv1SendMoveCommand():
 			time.sleep(0.1)
 	print("[BT 2]: Sending move message.")
 	agv1ThreadOn = True
-	BTS.sendMoveMessage(1, False)
+	BTS.sendMoveMessage(1, subscribeToState)
 	BTS.stateAGV1 = BTS.AGV1_MOVING
 	agv1ThreadOn = False
 
@@ -192,8 +192,10 @@ def R2PickObject():
 	# interpret message...
 	R2_state = R2_AT_PICK_POS
 	R2_picked_counter += 1
-	# Tell AGV2 to move
-	agv2SendMoveCommand()
+	# Tell AGV2 to move if we have not ended
+	if R2_picked_counter % 4 != 0:
+		print("[PROGRAM]: Sending Move Command to AGV2.")
+		agv2SendMoveCommand()
 
 def R2PlaceObjects(orderedObjects):
 	""" Send place order to R2 and wait for response, then tell AGV2 to move """
@@ -239,15 +241,15 @@ UR1.startConnection()
 UR2.startConnection()
 
 # Connect to AGV1
-agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
-agv1_bt_thread.daemon = True
-agv1_bt_thread.start();
+#agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
+#agv1_bt_thread.daemon = True
+#agv1_bt_thread.start();
 
 # Wait for start!!!!
 print("[PROGRAM]: Ready to start! Press any key...")
 a = raw_input()
 
-agv1SendMoveCommand()
+agv1SendMoveCommand(True)
 
 #############
 # MAIN LOOP #
@@ -299,7 +301,7 @@ while True:
 				agv2_bt_thread.daemon = True
 				agv2_bt_thread.start();
 	# 3 - If object has been placed, reset cycle
-	else:
+	elif R1_place_ok:
 		print("[PROGRAM]: Resetting R1 cycle. Enabling R2 pick.")
 		R1_picture_ok = False
 		R1_pick_ok = False
@@ -310,7 +312,7 @@ while True:
 	# R2 workflow #
 	###############
 	# 1 - If we have picked 4, send distance place commands
-	if R2_picked_counter == 4:
+	if R2_picked_counter == 8:
 		if not r2_thread.is_alive() and not R2_placed_ordered:
 			print("[PROGRAM]: Ordering cards.")
 			R2_placed_ordered = True
@@ -318,10 +320,10 @@ while True:
 			r2_thread.daemon = True
 			r2_thread.start()
 	# 2 - If we have picked 8, send color place commands
-	elif R2_picked_counter == 8 and not R2_placed_ordered:
-		if not r2_thread.is_alive():
+	elif R2_picked_counter == 4:
+		if not r2_thread.is_alive() and not R2_placed_ordered:
 			print("[PROGRAM]: Ordering colors.")
-			R2_placed_ordered
+			R2_placed_ordered = True
 			r2_thread = threading.Thread(target=R2PlaceObjects, name="r2Thread", args=([CAM.getOrderedColors()]))
 			r2_thread.daemon = True
 			r2_thread.start()

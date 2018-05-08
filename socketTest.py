@@ -16,7 +16,7 @@ class URSocket:
 		"""Create the socket and wait for a connection request"""
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM);
 		server_address = (self.TCP_IP, self.TCP_PORT)
-		if self.debug: print("[TCP/IP %d]: starting up on %s port %s" %(self.TCP_PORT, server_address))
+		if self.debug: print("[TCP/IP %d]: starting up on %s port %s" %(self.TCP_PORT, server_address[0], server_address[1]))
 		self.sock.bind(server_address)
 		self.sock.listen(1)
 		if self.debug: print("[TCP/IP %d]: waiting for a connection" %(self.TCP_PORT))
@@ -30,7 +30,7 @@ class URSocket:
 		
 	def send(self, data):
 		"""Send data"""
-		if self.debug: print("[TCP/IP %d]: sending data: %d" %(data))
+		if self.debug: print("[TCP/IP %d]: sending data: %s" %(self.TCP_PORT, data))
 		self.connection.sendall(data)
 		
 	def closeConnection(self):
