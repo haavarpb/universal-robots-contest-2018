@@ -76,7 +76,7 @@ def takePicture():
 		ord2 = colorOrder.index(2) + 1
 		ord3 = colorOrder.index(3) + 1
 		# Send message with first 3 commands
-		UR2.send("(%d)\n" % (ord3, ord1, ord2))
+		UR2.send("(%d,%d,%d)\n" % (ord3, ord1, ord2))
 		# Tell R1 to pick the object from AGV1
 		R1PickObject(False)
 
@@ -208,7 +208,7 @@ def R2PickObject():
 	R2_state = R2_AT_PICK_POS
 	R2_picked_counter += 1
 	# Tell AGV2 to move if we have not ended
-	if R2_picked_counter == 4:
+	if R2_picked_counter < 4:
 		print("[PROGRAM]: Sending Move Command to AGV2.")
 		agv2SendMoveCommand()
 
@@ -229,15 +229,14 @@ UR1.startConnection()
 UR2.startConnection()
 
 # Connect to AGV1
-#agv1_bt_thread = threading.Thread(target=agv1UpdateState, name="agv1Thread")
-#agv1_bt_thread.daemon = True
-#agv1_bt_thread.start();
+# Connect to AGV1
+BTS.updateState(1)
 
 # Wait for start!!!!
 print("[PROGRAM]: Ready to start! Press any key...")
 a = raw_input()
 
-agv1SendMoveCommand(True)
+BTS.sendMoveMessage(1, True)
 
 #############
 # MAIN LOOP #
