@@ -3,8 +3,12 @@ import pexpect
 from computeDistance import *
 from dominantColors import *
 import google.cloud.vision
+import os
 # Import camera
 from picamera import PiCamera
+from subprocess import call
+
+
 
 class Camera:
 
@@ -12,6 +16,7 @@ class Camera:
 
 		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=~miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
 		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
+		os.system('export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/miller/PC-TEST/JasonKey/PC/PC-Test-132f522d6015.json')
 		self.camera = PiCamera()
 		self.client = google.cloud.vision.ImageAnnotatorClient()
 		self.cards = []

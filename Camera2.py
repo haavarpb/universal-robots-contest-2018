@@ -12,7 +12,7 @@ class Camera:
 
 	def __init__(self, debug=True):
 		# Set environment variable of Google Credentials
-		os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json"
+		# os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/pi/miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json"
 		# Initialise objects and variables
 		self.camera = PiCamera()
 		self.sclient = google.cloud.vision.ImageAnnotatorClient()

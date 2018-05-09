@@ -6,24 +6,19 @@ import threading
 import time
 
 class MainControl:
-	""" Class to control the Camera, the Bluetooth and the R1 & R2 cycles """
-
-	# Constants
-	self.T_SLEEP = 0.1
-	self.AGV1 = 1
-	self.AGV2 = 2
-	self.IMG_DIST = 0
-	self.IMG_COLOR = 1
-	self.CAM
-	self.BTS
-	self.UR1
-	self.UR2
+	""" Class to control the Camera, the Bluetooth and the R1 & R2 cycles  """
 
 
 	def __init__(self, debug=True):
 
 		# Set debug
 		self.d = debug
+		# Constants
+        	self.T_SLEEP = 0.1
+        	self.AGV1 = 1
+        	self.AGV2 = 2
+        	self.IMG_DIST = 0
+        	self.IMG_COLOR = 1
 		# Initialise objects
 		self.CAM = Camera(debug=self.d)
 		self.BTS = BTServer(debug=self.d)
@@ -49,20 +44,24 @@ class MainControl:
 	def startCycle(self):
 
 		# Start the TCP/IP connections with the robots
-		UR1.startConnection()
-		UR2.startConnection()
+		self.UR1.startConnection()
+		self.UR2.startConnection()
 		# Connect to AGV1 via Bluetooth
-		BTS.updateState(self.AGV1)
+		self.BTS.updateState(self.AGV1)
 
 		# Wait for start!!!!
 		print("[PROGRAM]: Ready to start! Press any key...")
 		a = raw_input()
 
 		# Send move message to AGV1
-		BTS.sendMoveMessage(self.AGV1, True)
+		self.BTS.sendMoveMessage(self.AGV1, True)
 		# Start Robot threads
 		self.R1Thread.start()
 		self.R2Thread.start()
+		
+		# Do not close until everything ends
+		self.R1Thread.join()
+		self.R2Thread.join()
 
 
 	############
@@ -83,9 +82,7 @@ class MainControl:
 				time.sleep(self.T_SLEEP)
 
 			# 2 - Take picture and analyze
-			self.UR1.receive() # R1 sends "Ready for picture!"
-			self.CAM.takePicture(self.IMG_COLOR) # here the variable picturesTaken is increased
-
+			
 			###################
 			# While taking the last picture, to save time,
 			# we can run a parallel thread before asking the camera to analyze the picture:
@@ -95,9 +92,9 @@ class MainControl:
 			#
 			# Step 2 would be:
 			#
-			# self.UR1.receive() # R1 sends "Ready for picture!"
-			# if self.CAM.picturesTaken == 3: self.startParallelBTConnect(self.AGV2)
-			# self.CAM.takePicture(self.IMG_COLOR) # here the variable picturesTaken is increased
+			self.UR1.receive() # R1 sends "Ready for picture!"
+			if self.CAM.picturesTaken == 3: self.startParallelBTConnect(self.AGV2)
+			self.CAM.takePicture(self.IMG_COLOR) # here the variable picturesTaken is increased
 			###################
 
 			# 3 - If we have taken 4 pictures, send the order of the first 3
@@ -145,7 +142,7 @@ class MainControl:
 		while self.CAM.picturesTaken <= 4:
 
 			#1 - Wait until R1 enables us to pick
-			while not selt.R2PickEnabled:
+			while not self.R2PickEnabled:
 				time.sleep(self.T_SLEEP)
 
 			# 2 - Wait until AGV2 is in P21 -> read from AGV2
@@ -190,6 +187,7 @@ class MainControl:
 		self.parallelBTThread.start()
 
 
+MC = MainControl()
 
 # #############
 # # CONSTANTS #
