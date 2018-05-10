@@ -5,7 +5,7 @@ import sys
 class URSocket:
 	"""A class supporting a socket server."""
 
-	TCP_IP = "172.16.17.3"
+	TCP_IP = "172.16.17.2"
 
 	def __init__(self, port, debug=True):
 		"""Define the port of the socket and start the connection"""

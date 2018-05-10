@@ -187,7 +187,14 @@ class MainControl:
 		self.parallelBTThread.start()
 
 
-MC = MainControl()
+debug = False
+
+if len(sys.argv) > 1:
+	debugarg = sys.argv[1]
+	if debugarg:
+		debug = True
+
+MC = MainControl(debug)
 
 # #############
 # # CONSTANTS #

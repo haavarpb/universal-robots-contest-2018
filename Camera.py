@@ -16,7 +16,7 @@ class Camera:
 
 		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=~miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
 		# pexpect.run('export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/miller/PC-Test/JasonKey/PC/PC-Test-132f522d6015.json')
-		os.system('export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/miller/PC-TEST/JasonKey/PC/PC-Test-132f522d6015.json')
+		os.system('cd /home/pi/miller/PC-TEST/Codes/universal_robots_contests && export GOOGLE_APPLICATION_CREDENTIALS=/home/pi/miller/PC-TEST/JasonKey/PC/PC-Test-132f522d6015.json')
 		self.camera = PiCamera()
 		self.client = google.cloud.vision.ImageAnnotatorClient()
 		self.cards = []
@@ -25,7 +25,8 @@ class Camera:
 		self.picturesTaken = 0
 
 	def takePicture(self, picType):
-
+		
+	
 		if picType == 0:
 			# DISTANCES
 			if self.debug: print("[CAMERA]: taking picture: Distances")
