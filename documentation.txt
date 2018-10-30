@@ -1,0 +1,9 @@
+#### DOCS FOR UNIVERSAL ROBOTS HACKATON ####
+
+This code was developed for the first UR Hackaton Barcelona 2018 - Packaging and Logistics.
+
+It consists of several modules made to run on the RPi in order to communicate with two AGV robots via bluetooth and two UR3 robots using TCP/IP.
+
+The project was developed in 20 days and presented in the Hispack Fair 2018 in Fira Barcelona, where our team qualified as Finisher and won the prize of the competition.
+
+Thanks to UR for he whole experience.
